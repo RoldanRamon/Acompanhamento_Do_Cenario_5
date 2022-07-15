@@ -27,7 +27,7 @@ cenario_5<- read_excel(path = '2-base/cenario_5 - ocs_atualizado_2.junho VERSÃO
 fitro_cen_5 <- unique(cenario_5 %>% filter(!is.na(coluna1)) %>% select(coluna1))
 
 #Importa status de cada ocs
-status_ocs_cenario_5<- read_excel(path = 'Status_ocs_cenario_5.xlsx') %>% janitor::clean_names() %>% 
+status_ocs_cenario_5<- read_excel(path = '2-base/Status_ocs_cenario_5.xlsx') %>% janitor::clean_names() %>% 
   group_by(data_inclusao,nome_empresa, nome_filial,ordem_compra,comprador,status) %>% summarise(gasto = sum(as.numeric(gasto))) %>% 
   mutate(aprovador = if_else(gasto<=3000,'comprador',
                          if_else(gasto>3000&gasto<=30000,'comprador e coordenador',
