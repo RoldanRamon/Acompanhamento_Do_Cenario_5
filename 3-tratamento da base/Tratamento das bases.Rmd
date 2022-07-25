@@ -3,7 +3,7 @@ title: "Tratamento das Bases"
 output: html_document
 ---
 
-# Carrega Bases
+# Tratamento das Bases
 
 ```{r, warning=FALSE,message=FALSE,echo=FALSE}
 rm(list = ls())
@@ -13,11 +13,7 @@ library(ggplot2)
 library(readxl)
 library(stringr)
 library(reticulate)
-```
 
-## \# Tratamento das OCs
-
-```{r, warning=FALSE,message=FALSE,echo=FALSE}
 #Importa Base
 cenario_5<- read_excel(path = '../2-base/cenario_5 - ocs_atualizado_2.junho VERSÃO CORRIGIDA ALINI (1).xlsx',sheet = 'BASE') %>% janitor::clean_names()
 todos <- unique(cenario_5 %>% filter(!is.na(coluna1)) %>% select(nova_oc = coluna1))
@@ -72,4 +68,5 @@ writeLines(text = paste0(codigo, lista,")"),'../1-select/ocs.sql')
 pc <- import('pyperclip3')
 pc$copy(paste0(codigo, lista,")"))
 
+rm(list = ls())
 ```
