@@ -5,4 +5,5 @@
 *.sql linguist-detectable=true
 *.css linguist-detectable=true
 *.java linguist-detectable=true
+*.py linguist-detectable=true
 
