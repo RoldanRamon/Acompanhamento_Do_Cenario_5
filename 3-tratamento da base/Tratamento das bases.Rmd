@@ -1,0 +1,75 @@
+---
+title: "Tratamento das Bases"
+output: html_document
+---
+
+# Carrega Bases
+
+```{r, warning=FALSE,message=FALSE,echo=FALSE}
+rm(list = ls())
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(readxl)
+library(stringr)
+library(reticulate)
+```
+
+## \# Tratamento das OCs
+
+```{r, warning=FALSE,message=FALSE,echo=FALSE}
+#Importa Base
+cenario_5<- read_excel(path = '../2-base/cenario_5 - ocs_atualizado_2.junho VERSÃO CORRIGIDA ALINI (1).xlsx',sheet = 'BASE') %>% janitor::clean_names()
+todos <- unique(cenario_5 %>% filter(!is.na(coluna1)) %>% select(nova_oc = coluna1))
+
+codigo <- c("SELECT DISTINCT A.DATAINCLUSAO AS DATA_INCLUSAO,
+H.NOME AS NOME_EMPRESA,
+I.NOME AS NOME_FILIAL,
+A.NUMERO AS ORDEM_COMPRA,
+SOLICITACAO.NUMERO AS NUM_SOL_PAI,
+B.TOTALGERAL AS GASTO,
+CASE WHEN A.STATUS = '1' THEN 'CADASTRADA' ELSE
+    CASE WHEN A.STATUS = '2' THEN 'CONFIRMADA' ELSE
+        CASE WHEN A.STATUS = '3' THEN 'RECEBENDO' ELSE
+            CASE WHEN A.STATUS = '4' THEN 'ENCERRADA' ELSE
+                CASE WHEN A.STATUS = '5' THEN 'CANCELADA' ELSE 'RECUSADA'
+                END
+            END
+        END
+    END
+END AS STATUS,
+CASE WHEN UPPER(C.APELIDO) NOT IN ('SETOR.COMPRAS', 'SUPRIMENTOS_OC_AUTOMATICA') THEN UPPER(C.APELIDO) ELSE
+     CASE WHEN UPPER(D.APELIDO) IS NOT NULL THEN UPPER(D.APELIDO) ELSE
+         CASE WHEN UPPER(E.APELIDO) IS NOT NULL THEN UPPER(E.APELIDO) END
+     END
+END AS COMPRADOR,
+F.CGCCPF AS CNPJ_FORNECEDOR,
+F.NOME AS NOME_FORNECEDOR,
+REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CASE WHEN G.TELEFONE IS NOT NULL THEN UPPER(CONCAT('(',G.DDD,')',' - ',G.TELEFONE,' - ','RAMAL: ',G.RAMAL)) ELSE '' END ,char(13),''),char(34),''),char(9),''),char(10),''),'/N','/ N'),'/R','/ R') AS TELEFONE_DO_FORNECEDOR,
+
+REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(UPPER(F.EMAIL) ,char(13),''),char(34),''),char(9),''),char(10),''),'/N','/ N'),'/R','/ R') AS EMAIL_DO_FORNECEDOR
+
+
+FROM CP_ORDENSCOMPRA A
+INNER JOIN  CP_ORDENSCOMPRAITENS B ON A.HANDLE = B.ORDEMCOMPRA
+LEFT JOIN Z_GRUPOUSUARIOS C ON A.USUARIOINCLUIU = C.HANDLE
+LEFT JOIN CP_SOLICITACOES SOLICITACAO ON SOLICITACAO.NUMERO = A.NUMERODOCUMENTOORIGEM
+LEFT JOIN Z_GRUPOUSUARIOS D ON SOLICITACAO.SOLICITANTE = D.HANDLE
+LEFT JOIN CP_REQUISICOES REQ ON REQ.ORDEMCOMPRA = A.HANDLE
+LEFT JOIN Z_GRUPOUSUARIOS E on REQ.REQUISITANTE = E.HANDLE
+LEFT JOIN GN_PESSOAS F ON F.HANDLE = A.FORNECEDOR
+LEFT JOIN GN_PESSOATELEFONES G ON G.PESSOA = F.HANDLE
+LEFT JOIN EMPRESAS H ON H.HANDLE = A.EMPRESA
+LEFT JOIN FILIAIS I ON I.HANDLE = A.FILIAL
+WHERE A.NUMERO IN (")
+
+lista <- paste0('"',paste(unique(todos$nova_oc),collapse = '","'),'"')
+
+#Exporta codigo das ocs
+writeLines(text = paste0(codigo, lista,")"),'../1-select/ocs.sql')
+
+# Usa python para copiar informações e deixar na área de transferencia
+pc <- import('pyperclip3')
+pc$copy(paste0(codigo, lista,")"))
+
+```
